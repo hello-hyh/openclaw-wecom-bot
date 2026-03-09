@@ -1,9 +1,9 @@
 {
-  "name": "@openclaw/wecom",
+  "name": "@openclaw/wecom-bot",
   "version": "0.3.6",
   "private": true,
   "type": "module",
-  "description": "WeCom (企业微信) channel plugin for Clawdbot (AI bot).",
+  "description": "企业微信智能机器人插件",
   "license": "MIT",
   "exports": "./index.js",
   "openclaw": {
