@@ -18,10 +18,10 @@
     "channel": {
       "id": "wecom",
       "label": "WeCom",
-      "selectionLabel": "WeCom (企业微信自建应用)",
+      "selectionLabel": "WeCom (企业微信智能机器人插件)",
       "docsPath": "/channels/wecom",
       "docsLabel": "wecom",
-      "blurb": "Enterprise WeChat internal app via callback + send API.",
+      "blurb": "Enterprise WeChat Ai bot via callback + send API.",
       "order": 80,
       "aliases": [
         "wework",
