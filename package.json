@@ -1,0 +1,37 @@
+{
+  "name": "@openclaw/wecom",
+  "version": "0.3.6",
+  "private": true,
+  "type": "module",
+  "description": "WeCom (企业微信) channel plugin for Clawdbot (AI bot).",
+  "license": "MIT",
+  "exports": "./index.js",
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ]
+  },
+  "clawdbot": {
+    "extensions": [
+      "./index.js"
+    ],
+    "channel": {
+      "id": "wecom",
+      "label": "WeCom",
+      "selectionLabel": "WeCom (企业微信自建应用)",
+      "docsPath": "/channels/wecom",
+      "docsLabel": "wecom",
+      "blurb": "Enterprise WeChat internal app via callback + send API.",
+      "order": 80,
+      "aliases": [
+        "wework",
+        "qiwei",
+        "wxwork"
+      ]
+    }
+  },
+  "dependencies": {
+    "clawdbot": "*",
+    "fast-xml-parser": "^4.3.6"
+  }
+}
