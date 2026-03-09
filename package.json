@@ -21,7 +21,7 @@
       "selectionLabel": "WeCom (企业微信自建应用)",
       "docsPath": "/channels/wecom",
       "docsLabel": "wecom",
-      "blurb": "Enterprise WeChat internal app via callback + send API.",
+      "blurb": "Enterprise WeChat Ai bot via callback + send API.",
       "order": 80,
       "aliases": [
         "wework",
