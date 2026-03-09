@@ -1389,15 +1389,38 @@ async function processInboundMessage({
       let finalAccumulatedReply = "";
 
       // 替代 `dispatchReplyWithBufferedBlockDispatcher` 以确保发生 tool 调用的长周期也能等待结束再回传最终结果
-      const { dispatchReplyFromConfig } =
-        await import("clawdbot/dist/auto-reply/reply/dispatch-from-config.js");
+      const { dispatchReplyFromConfig } = runtime.channel.reply;
 
       const replyResult = await dispatchReplyFromConfig({
         ctx: ctxPayload,
         cfg,
         dispatcher: {
-          sendBlockReply: () => false,
-          sendFinalReply: () => false,
+          sendBlockReply: (payload) => {
+            if (payload.text) {
+              finalAccumulatedReply +=
+                (finalAccumulatedReply ? "\n\n" : "") + payload.text;
+              writeToTranscript({
+                sessionKey: sessionId,
+                role: "assistant",
+                text: payload.text,
+                logger: api.logger,
+              }).catch(() => {});
+            }
+            return false;
+          },
+          sendFinalReply: (payload) => {
+            if (payload.text) {
+              finalAccumulatedReply +=
+                (finalAccumulatedReply ? "\n\n" : "") + payload.text;
+              writeToTranscript({
+                sessionKey: sessionId,
+                role: "assistant",
+                text: payload.text,
+                logger: api.logger,
+              }).catch(() => {});
+            }
+            return false;
+          },
           waitForIdle: async () => {},
           getQueuedCounts: () => ({ block: 0, final: 0 }),
         },
@@ -1430,28 +1453,6 @@ async function processInboundMessage({
         },
       });
 
-      // 当上方巨大耗时的函数退出后，说明所有 tool_call 和推理动作均已终止
-      // 我们在此抓取真正的最终交付文本（如果中间没有被 block 吞掉的话，有的话可能是数组）
-      const replies = replyResult
-        ? Array.isArray(replyResult)
-          ? replyResult
-          : [replyResult]
-        : [];
-
-      for (const reply of replies) {
-        if (reply.text) {
-          finalAccumulatedReply +=
-            (finalAccumulatedReply ? "\n\n" : "") + reply.text;
-
-          await writeToTranscript({
-            sessionKey: sessionId,
-            role: "assistant",
-            text: reply.text,
-            logger: api.logger,
-          });
-        }
-      }
-
       broadcastToChatUI({
         sessionKey: sessionId,
         role: "assistant",
@@ -1467,26 +1468,36 @@ async function processInboundMessage({
       });
 
       // 所有推理和工具调用都已结束后，将积累的所有最终块文本一次性通过 response_url 返回
-      const textToSend = finalAccumulatedReply.trim();
-      if (responseUrl && textToSend) {
+      let textToSend = finalAccumulatedReply.trim();
+
+      const doSendResponseUrl = async (content) => {
         try {
           await sendWecomMarkdownMessage({
             responseUrl,
-            markdownContent: textToSend,
+            markdownContent: content,
             logger: api.logger,
           });
           api.logger.info?.(
-            `wecom-aibot: sent accumulated AI replies to ${fromUser}, length=${textToSend.length}`,
+            `wecom-aibot: sent accumulated AI replies to ${fromUser}, length=${content.length}`,
           );
         } catch (e) {
           api.logger.warn?.(
             `wecom-aibot: accumulated response_url reply failed: ${e.message}`,
           );
         }
-      } else if (responseUrl) {
-        api.logger.info?.(
-          `wecom-aibot: no text generated to send via response_url.`,
-        );
+      };
+
+      if (responseUrl) {
+        if (textToSend) {
+          await doSendResponseUrl(textToSend);
+        } else {
+          api.logger.info?.(
+            `wecom-aibot: no text generated to send via response_url.`,
+          );
+          await doSendResponseUrl(
+            "抱歉，处理您的消息时出现错误，请稍后重试。\n错误: 未知错误",
+          );
+        }
       }
     } finally {
       if (resolveHttpResponse) {
