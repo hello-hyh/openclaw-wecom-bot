@@ -293,24 +293,6 @@ async function fetchMediaFromUrl(url) {
   }
   const buffer = Buffer.from(await res.arrayBuffer());
 
-  // [诊断日志] 帮助排查 256 字节乱码文件问题
-  console.log(
-    `[Diagnostic] fetchMediaFromUrl headers: C-Type=${contentType}, C-Disp=${contentDisposition}, Length=${buffer.length}`,
-  );
-  if (buffer.length <= 1024) {
-    console.log(
-      `[Diagnostic] fetchMediaFromUrl content peek (utf-8): ${buffer.toString("utf8").slice(0, 200)}`,
-    );
-    // 检测这是否为一整块的 AES 密文（通常如果没有正确的明文头，我们暂不直接断定，但可以提供线索）
-    // 企微机器人如果开启了加密传输，那么下载的媒体文件本质上也是被相同算法加密的串，需上层解密
-    return {
-      buffer,
-      contentType,
-      contentDisposition,
-      isWecomCorpus: true, // 企微环境默认推测需要解密
-    };
-  }
-
   return {
     buffer,
     contentType,
@@ -340,7 +322,7 @@ const WecomAibotPlugin = {
   },
   messaging: {
     targetResolver: {
-      hint: "Use a WeCom UserId (e.g. LiXueHeng) or wecom:UserId",
+      hint: "请输入正确的企业微信 UserId 或 wecom:UserId",
       looksLikeId: (raw, normalized) => {
         if (!raw) return false;
         if (/^wecom:/i.test(raw)) return true;
